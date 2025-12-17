@@ -353,6 +353,20 @@ export const streamAntigravity: StreamFunction<"antigravity"> = (
 				...ANTIGRAVITY_HEADERS,
 			};
 
+			// Debug logging - write to file if enabled
+			if (process.env.DEBUG_ANTIGRAVITY) {
+				const fs = await import("node:fs");
+				const debugPath =
+					process.env.DEBUG_ANTIGRAVITY === "1" ? "/tmp/antigravity-debug.json" : process.env.DEBUG_ANTIGRAVITY;
+				const debugData = {
+					url,
+					timestamp: new Date().toISOString(),
+					model: model.id,
+					requestBody,
+				};
+				fs.writeFileSync(debugPath, JSON.stringify(debugData, null, 2));
+			}
+
 			// Retry logic for rate limiting (429 errors)
 			const MAX_RETRIES = 5;
 			let response: Response | null = null;

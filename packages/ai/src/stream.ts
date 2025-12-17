@@ -201,9 +201,10 @@ function mapOptionsForApi<TApi extends Api>(
 
 		case "antigravity": {
 			// Antigravity supports both Gemini and Claude models via Google's API
-			// Gemini 3 Pro models REQUIRE thinking mode - they error with budget 0
+			// Gemini 3 Pro and GPT-OSS models REQUIRE thinking mode - they error with budget 0
 			const isGemini3 = model.id.includes("gemini-3");
-			const requiresThinking = isGemini3 || model.id.includes("-thinking");
+			const isGptOss = model.id.includes("gpt-oss");
+			const requiresThinking = isGemini3 || isGptOss || model.id.includes("-thinking");
 
 			if (!options?.reasoning && !requiresThinking) {
 				return { ...base, thinking: { enabled: false } } satisfies AntigravityOptions;
@@ -217,7 +218,9 @@ function mapOptionsForApi<TApi extends Api>(
 			};
 
 			// Default to "medium" for models that require thinking but no level specified
-			const effectiveReasoning = options?.reasoning || (requiresThinking ? "medium" : undefined);
+			// GPT-OSS uses higher default budget (8192)
+			const defaultLevel = isGptOss ? "medium" : "medium";
+			const effectiveReasoning = options?.reasoning || (requiresThinking ? defaultLevel : undefined);
 
 			return {
 				...base,

@@ -315,12 +315,15 @@ export async function getApiKeyForModel(model: Model<Api>): Promise<string | und
 	}
 
 	// For Antigravity, check OAuth and pass stored projectId
+	// Use getOAuthToken which handles automatic token refresh
 	if (model.provider === "antigravity") {
-		const creds = loadOAuthCredentials("antigravity");
-		if (creds?.access) {
+		const token = await getOAuthToken("antigravity");
+		if (token) {
+			// Get projectId from stored credentials
+			const creds = loadOAuthCredentials("antigravity");
+			const projectId = creds?.projectId || "";
 			// Encode token and projectId together - provider will parse this
-			const projectId = creds.projectId || "";
-			return JSON.stringify({ token: creds.access, projectId });
+			return JSON.stringify({ token, projectId });
 		}
 		return undefined;
 	}

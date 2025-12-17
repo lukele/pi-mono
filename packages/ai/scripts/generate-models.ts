@@ -530,12 +530,8 @@ async function generateModels() {
 		antigravityModel("gemini-3-pro-medium", "Gemini 3 Pro Medium", { reasoning: true }),
 		antigravityModel("gemini-3-pro-low", "Gemini 3 Pro Low", { reasoning: true }),
 
-		// Claude models (non-thinking)
-		antigravityModel("claude-sonnet-4-5", "Claude Sonnet 4.5", { contextWindow: 200000 }),
-		antigravityModel("claude-opus-4-5", "Claude Opus 4.5", { contextWindow: 200000 }),
-		antigravityModel("claude-haiku-4-5", "Claude Haiku 4.5", { contextWindow: 200000 }),
-
-		// Claude models (with extended thinking)
+		// Claude models via Antigravity
+		// Note: Only -thinking variants are confirmed to work. Non-thinking variants return 404.
 		antigravityModel("claude-sonnet-4-5-thinking", "Claude Sonnet 4.5 Thinking", { reasoning: true, contextWindow: 200000 }),
 		antigravityModel("claude-opus-4-5-thinking", "Claude Opus 4.5 Thinking", { reasoning: true, contextWindow: 200000 }),
 	];

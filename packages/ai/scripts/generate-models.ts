@@ -482,149 +482,64 @@ async function generateModels() {
 		});
 	}
 
-	// Add Antigravity models (Google Cloud Code Assist)
-	// These models are accessible via OAuth through Google's Antigravity API
-	// Cost is 0 as it's included in Google Workspace subscriptions
-	// Model IDs based on actual Antigravity API model names
+	// Add Antigravity models (Google Cloud Code Assist API)
+	//
+	// Antigravity is Google's internal API for Cloud Code Assist, accessible via OAuth.
+	// It provides access to Gemini and Claude models through a unified endpoint.
+	//
+	// NOTE: These models are NOT available via models.dev or any public API listing.
+	// Model IDs are based on observed Antigravity API model names from the actual service.
+	// The API does not have a public models listing endpoint.
+	//
+	// Cost is 0 as usage is included with Google accounts (free tier available).
+	//
+	// To add new models: check actual Antigravity API responses or documentation
+	// for valid model IDs. The format is typically:
+	// - Gemini: "gemini-{version}-{variant}" (e.g., "gemini-2.5-pro", "gemini-3-pro-high")
+	// - Claude: "claude-{model}-{version}[-thinking]" (e.g., "claude-sonnet-4-5-thinking")
+
+	const ANTIGRAVITY_BASE_URL = "https://daily-cloudcode-pa.sandbox.googleapis.com";
+	const ANTIGRAVITY_ZERO_COST = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+
+	// Helper to create an Antigravity model definition
+	const antigravityModel = (
+		id: string,
+		name: string,
+		opts: { reasoning?: boolean; contextWindow?: number; maxTokens?: number } = {},
+	): Model<any> => ({
+		id,
+		name: `${name} (Antigravity)`,
+		api: "antigravity",
+		provider: "antigravity",
+		baseUrl: ANTIGRAVITY_BASE_URL,
+		reasoning: opts.reasoning ?? false,
+		input: ["text", "image"] as ("text" | "image")[],
+		cost: ANTIGRAVITY_ZERO_COST,
+		contextWindow: opts.contextWindow ?? 1000000,
+		maxTokens: opts.maxTokens ?? 64000,
+	});
+
 	const antigravityModels: Model<any>[] = [
-		// Gemini models
-		{
-			id: "gemini-2.5-pro",
-			name: "Gemini 2.5 Pro (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: true,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 1048576,
-			maxTokens: 65536,
-		},
-		{
-			id: "gemini-2.5-flash",
-			name: "Gemini 2.5 Flash (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: true,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 1048576,
-			maxTokens: 65536,
-		},
-		{
-			id: "gemini-2.5-flash-lite",
-			name: "Gemini 2.5 Flash Lite (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: false,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 1048576,
-			maxTokens: 65536,
-		},
-		// Gemini 3 Pro variants with different thinking levels
-		{
-			id: "gemini-3-pro-high",
-			name: "Gemini 3 Pro High (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: true,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 1000000,
-			maxTokens: 64000,
-		},
-		{
-			id: "gemini-3-pro-medium",
-			name: "Gemini 3 Pro Medium (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: true,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 1000000,
-			maxTokens: 64000,
-		},
-		{
-			id: "gemini-3-pro-low",
-			name: "Gemini 3 Pro Low (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: true,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 1000000,
-			maxTokens: 64000,
-		},
-		// Claude models via Antigravity
-		// Non-thinking variants
-		{
-			id: "claude-sonnet-4-5",
-			name: "Claude Sonnet 4.5 (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: false,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 200000,
-			maxTokens: 64000,
-		},
-		{
-			id: "claude-opus-4-5",
-			name: "Claude Opus 4.5 (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: false,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 200000,
-			maxTokens: 64000,
-		},
-		{
-			id: "claude-haiku-4-5",
-			name: "Claude Haiku 4.5 (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: false,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 200000,
-			maxTokens: 64000,
-		},
-		// Thinking variants (with extended thinking/reasoning)
-		{
-			id: "claude-sonnet-4-5-thinking",
-			name: "Claude Sonnet 4.5 Thinking (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: true,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 200000,
-			maxTokens: 64000,
-		},
-		{
-			id: "claude-opus-4-5-thinking",
-			name: "Claude Opus 4.5 Thinking (Antigravity)",
-			api: "antigravity",
-			provider: "antigravity",
-			baseUrl: "https://daily-cloudcode-pa.sandbox.googleapis.com",
-			reasoning: true,
-			input: ["text", "image"],
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 200000,
-			maxTokens: 64000,
-		},
+		// Gemini 2.5 models
+		antigravityModel("gemini-2.5-pro", "Gemini 2.5 Pro", { reasoning: true, contextWindow: 1048576, maxTokens: 65536 }),
+		antigravityModel("gemini-2.5-flash", "Gemini 2.5 Flash", { reasoning: true, contextWindow: 1048576, maxTokens: 65536 }),
+		antigravityModel("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite", { reasoning: false, contextWindow: 1048576, maxTokens: 65536 }),
+
+		// Gemini 3 Pro variants (different thinking levels built into model ID)
+		antigravityModel("gemini-3-pro-high", "Gemini 3 Pro High", { reasoning: true }),
+		antigravityModel("gemini-3-pro-medium", "Gemini 3 Pro Medium", { reasoning: true }),
+		antigravityModel("gemini-3-pro-low", "Gemini 3 Pro Low", { reasoning: true }),
+
+		// Claude models (non-thinking)
+		antigravityModel("claude-sonnet-4-5", "Claude Sonnet 4.5", { contextWindow: 200000 }),
+		antigravityModel("claude-opus-4-5", "Claude Opus 4.5", { contextWindow: 200000 }),
+		antigravityModel("claude-haiku-4-5", "Claude Haiku 4.5", { contextWindow: 200000 }),
+
+		// Claude models (with extended thinking)
+		antigravityModel("claude-sonnet-4-5-thinking", "Claude Sonnet 4.5 Thinking", { reasoning: true, contextWindow: 200000 }),
+		antigravityModel("claude-opus-4-5-thinking", "Claude Opus 4.5 Thinking", { reasoning: true, contextWindow: 200000 }),
 	];
+
 	allModels.push(...antigravityModels);
 
 	// Group by provider and deduplicate by model ID

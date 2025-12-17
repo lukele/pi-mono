@@ -7,6 +7,12 @@ export interface OAuthCredentials {
 	access: string;
 	expires: number;
 	enterpriseUrl?: string;
+	/** Antigravity project ID */
+	projectId?: string;
+	/** Antigravity managed project ID */
+	managedProjectId?: string;
+	/** User email (for display purposes) */
+	email?: string;
 }
 
 interface OAuthStorageFormat {

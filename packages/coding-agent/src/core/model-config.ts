@@ -4,7 +4,7 @@ import AjvModule from "ajv";
 import { existsSync, readFileSync } from "fs";
 import { getModelsPath } from "../config.js";
 import { getGitHubCopilotBaseUrl, normalizeDomain, refreshGitHubCopilotToken } from "./oauth/github-copilot.js";
-import { getOAuthToken, type SupportedOAuthProvider } from "./oauth/index.js";
+import { getAntigravityProjectId, getOAuthToken, type SupportedOAuthProvider } from "./oauth/index.js";
 import { loadOAuthCredentials, saveOAuthCredentials } from "./oauth/storage.js";
 
 // Handle both default and named exports
@@ -28,6 +28,7 @@ const ModelDefinitionSchema = Type.Object({
 			Type.Literal("openai-responses"),
 			Type.Literal("anthropic-messages"),
 			Type.Literal("google-generative-ai"),
+			Type.Literal("antigravity"),
 		]),
 	),
 	reasoning: Type.Boolean(),
@@ -53,6 +54,7 @@ const ProviderConfigSchema = Type.Object({
 			Type.Literal("openai-responses"),
 			Type.Literal("anthropic-messages"),
 			Type.Literal("google-generative-ai"),
+			Type.Literal("antigravity"),
 		]),
 	),
 	headers: Type.Optional(Type.Record(Type.String(), Type.String())),
@@ -312,6 +314,17 @@ export async function getApiKeyForModel(model: Model<Api>): Promise<string | und
 		return githubToken;
 	}
 
+	// For Antigravity, check OAuth and pass stored projectId
+	if (model.provider === "antigravity") {
+		const creds = loadOAuthCredentials("antigravity");
+		if (creds?.access) {
+			// Encode token and projectId together - provider will parse this
+			const projectId = creds.projectId || "";
+			return JSON.stringify({ token: creds.access, projectId });
+		}
+		return undefined;
+	}
+
 	// For built-in providers, use getApiKey from @mariozechner/pi-ai
 	return getApiKey(model.provider as KnownProvider);
 }
@@ -331,10 +344,19 @@ export async function getAvailableModels(): Promise<{ models: Model<Api>[]; erro
 	const copilotCreds = loadOAuthCredentials("github-copilot");
 	const hasCopilotEnv = !!(process.env.COPILOT_GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
 	const hasCopilot = !!copilotCreds || hasCopilotEnv;
+	const antigravityCreds = loadOAuthCredentials("antigravity");
+	const hasAntigravity = !!antigravityCreds;
 
 	for (const model of allModels) {
 		if (model.provider === "github-copilot") {
 			if (hasCopilot) {
+				availableModels.push(model);
+			}
+			continue;
+		}
+
+		if (model.provider === "antigravity") {
+			if (hasAntigravity) {
 				availableModels.push(model);
 			}
 			continue;
@@ -371,6 +393,7 @@ export function findModel(provider: string, modelId: string): { model: Model<Api
 const providerToOAuthProvider: Record<string, SupportedOAuthProvider> = {
 	anthropic: "anthropic",
 	"github-copilot": "github-copilot",
+	antigravity: "antigravity",
 };
 
 // Cache for OAuth status per provider (avoids file reads on every render)

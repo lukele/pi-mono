@@ -1,4 +1,5 @@
 import { loginAnthropic, refreshAnthropicToken } from "./anthropic.js";
+import { getAntigravityProjectId, loginAntigravity, refreshAntigravityToken } from "./antigravity.js";
 import { loginGitHubCopilot, refreshGitHubCopilotToken } from "./github-copilot.js";
 import {
 	listOAuthProviders as listOAuthProvidersFromStorage,
@@ -10,8 +11,9 @@ import {
 
 // Re-export for convenience
 export { listOAuthProvidersFromStorage as listOAuthProviders };
+export { getAntigravityProjectId };
 
-export type SupportedOAuthProvider = "anthropic" | "github-copilot";
+export type SupportedOAuthProvider = "anthropic" | "github-copilot" | "antigravity";
 
 export interface OAuthProviderInfo {
 	id: SupportedOAuthProvider;
@@ -45,6 +47,11 @@ export function getOAuthProviders(): OAuthProviderInfo[] {
 			name: "GitHub Copilot",
 			available: true,
 		},
+		{
+			id: "antigravity",
+			name: "Antigravity (Google Cloud Code Assist)",
+			available: true,
+		},
 	];
 }
 
@@ -73,6 +80,13 @@ export async function login(
 			saveOAuthCredentials("github-copilot", creds);
 			break;
 		}
+		case "antigravity":
+			await loginAntigravity(
+				(url) => onAuth({ url, instructions: "Complete sign-in in your browser" }),
+				async () => onPrompt({ message: "Paste the redirect URL or authorization code:" }),
+				onProgress,
+			);
+			break;
 		default:
 			throw new Error(`Unknown OAuth provider: ${provider}`);
 	}
@@ -102,6 +116,9 @@ export async function refreshToken(provider: SupportedOAuthProvider): Promise<st
 			break;
 		case "github-copilot":
 			newCredentials = await refreshGitHubCopilotToken(credentials.refresh, credentials.enterpriseUrl);
+			break;
+		case "antigravity":
+			newCredentials = await refreshAntigravityToken(credentials);
 			break;
 		default:
 			throw new Error(`Unknown OAuth provider: ${provider}`);

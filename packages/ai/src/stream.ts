@@ -1,5 +1,6 @@
 import { ThinkingLevel } from "@google/genai";
 import { type AnthropicOptions, streamAnthropic } from "./providers/anthropic.js";
+import { type AntigravityOptions, streamAntigravity } from "./providers/antigravity.js";
 import { type GoogleOptions, streamGoogle } from "./providers/google.js";
 import { type OpenAICompletionsOptions, streamOpenAICompletions } from "./providers/openai-completions.js";
 import { type OpenAIResponsesOptions, streamOpenAIResponses } from "./providers/openai-responses.js";
@@ -75,6 +76,9 @@ export function stream<TApi extends Api>(
 
 		case "google-generative-ai":
 			return streamGoogle(model as Model<"google-generative-ai">, context, providerOptions);
+
+		case "antigravity":
+			return streamAntigravity(model as Model<"antigravity">, context, providerOptions);
 
 		default: {
 			// This should never be reached if all Api cases are handled
@@ -193,6 +197,35 @@ function mapOptionsForApi<TApi extends Api>(
 					budgetTokens: getGoogleBudget(googleModel, effort),
 				},
 			} satisfies GoogleOptions;
+		}
+
+		case "antigravity": {
+			// Antigravity supports both Gemini and Claude models via Google's API
+			// Gemini 3 Pro models REQUIRE thinking mode - they error with budget 0
+			const isGemini3 = model.id.includes("gemini-3");
+			const requiresThinking = isGemini3 || model.id.includes("-thinking");
+
+			if (!options?.reasoning && !requiresThinking) {
+				return { ...base, thinking: { enabled: false } } satisfies AntigravityOptions;
+			}
+
+			const antigravityBudgets = {
+				minimal: 1024,
+				low: 4096,
+				medium: 8192,
+				high: 16384,
+			};
+
+			// Default to "medium" for models that require thinking but no level specified
+			const effectiveReasoning = options?.reasoning || (requiresThinking ? "medium" : undefined);
+
+			return {
+				...base,
+				thinking: {
+					enabled: true,
+					budgetTokens: antigravityBudgets[clampReasoning(effectiveReasoning)!],
+				},
+			} satisfies AntigravityOptions;
 		}
 
 		default: {

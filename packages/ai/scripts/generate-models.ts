@@ -519,21 +519,30 @@ async function generateModels() {
 		maxTokens: opts.maxTokens ?? 64000,
 	});
 
+	// Models documented at https://antigravity.google/docs/models
+	// Reasoning models (user-selectable):
+	// - Gemini 3 Pro (high), Gemini 3 Pro (low)
+	// - Claude Sonnet 4.5, Claude Sonnet 4.5 (thinking), Claude Opus 4.5 (thinking)
+	// - GPT-OSS
+	// Background models (not user-selectable):
+	// - Gemini 2.5 Pro UI Checkpoint, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
 	const antigravityModels: Model<any>[] = [
-		// Gemini 2.5 models
+		// Gemini 3 Pro - primary reasoning models
+		antigravityModel("gemini-3-pro-high", "Gemini 3 Pro (high)", { reasoning: true }),
+		antigravityModel("gemini-3-pro-low", "Gemini 3 Pro (low)", { reasoning: true }),
+
+		// Claude models
+		antigravityModel("claude-sonnet-4-5", "Claude Sonnet 4.5", { reasoning: false, contextWindow: 200000 }),
+		antigravityModel("claude-sonnet-4-5-thinking", "Claude Sonnet 4.5 (thinking)", { reasoning: true, contextWindow: 200000 }),
+		antigravityModel("claude-opus-4-5-thinking", "Claude Opus 4.5 (thinking)", { reasoning: true, contextWindow: 200000 }),
+
+		// GPT-OSS (OpenAI model via Antigravity)
+		antigravityModel("gpt-oss", "GPT-OSS", { reasoning: false }),
+
+		// Background/utility models (may not be directly usable but included for completeness)
 		antigravityModel("gemini-2.5-pro", "Gemini 2.5 Pro", { reasoning: true, contextWindow: 1048576, maxTokens: 65536 }),
-		antigravityModel("gemini-2.5-flash", "Gemini 2.5 Flash", { reasoning: true, contextWindow: 1048576, maxTokens: 65536 }),
+		antigravityModel("gemini-2.5-flash", "Gemini 2.5 Flash", { reasoning: false, contextWindow: 1048576, maxTokens: 65536 }),
 		antigravityModel("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite", { reasoning: false, contextWindow: 1048576, maxTokens: 65536 }),
-
-		// Gemini 3 Pro variants (different thinking levels built into model ID)
-		antigravityModel("gemini-3-pro-high", "Gemini 3 Pro High", { reasoning: true }),
-		antigravityModel("gemini-3-pro-medium", "Gemini 3 Pro Medium", { reasoning: true }),
-		antigravityModel("gemini-3-pro-low", "Gemini 3 Pro Low", { reasoning: true }),
-
-		// Claude models via Antigravity
-		// Note: Only -thinking variants are confirmed to work. Non-thinking variants return 404.
-		antigravityModel("claude-sonnet-4-5-thinking", "Claude Sonnet 4.5 Thinking", { reasoning: true, contextWindow: 200000 }),
-		antigravityModel("claude-opus-4-5-thinking", "Claude Opus 4.5 Thinking", { reasoning: true, contextWindow: 200000 }),
 	];
 
 	allModels.push(...antigravityModels);

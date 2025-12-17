@@ -32,6 +32,7 @@ import {
 	convertToolsToGemini,
 	type GeminiContent,
 	isClaudeModel,
+	isGptOssModel,
 	isThinkingCapableModel,
 	mapGeminiStopReason,
 } from "./google-shared.js";
@@ -116,6 +117,7 @@ function buildAntigravityRequest(
 	options: AntigravityOptions = {},
 ): AntigravityRequest {
 	const isClaude = isClaudeModel(model.id);
+	const isGptOss = isGptOssModel(model.id);
 	const isThinkingModel = isThinkingCapableModel(model.id);
 
 	// Use shared message conversion with Antigravity-specific options
@@ -142,28 +144,34 @@ function buildAntigravityRequest(
 	let thinkingEnabled = false;
 	let thinkingBudget = 0;
 
+	// Determine default thinking budget based on model type
+	const getDefaultThinkingBudget = () => {
+		if (isClaude) return 1024;
+		if (isGptOss) return 8192; // GPT-OSS uses higher budget
+		return -1; // Gemini uses -1 for dynamic
+	};
+
 	// For Claude with history, disable thinking (requires signed blocks)
 	if (isClaude && hasAssistantHistory) {
 		thinkingEnabled = false;
 		thinkingBudget = 0;
 	} else if (options.thinking?.enabled && isThinkingModel) {
 		thinkingEnabled = true;
-		thinkingBudget = isClaude
-			? (options.thinking.budgetTokens ?? 1024) // Claude uses specific budget
-			: (options.thinking.budgetTokens ?? -1); // Gemini uses -1 for dynamic
+		thinkingBudget = options.thinking.budgetTokens ?? getDefaultThinkingBudget();
 	} else if (isThinkingModel && !options.thinking) {
 		// Default: enable thinking for capable models
 		thinkingEnabled = true;
-		thinkingBudget = isClaude ? 1024 : -1;
+		thinkingBudget = getDefaultThinkingBudget();
 	}
 
 	// Generation config with model-specific parameters
 	const generationConfig: Record<string, unknown> = {
-		temperature: options.temperature ?? (isClaude ? 0.4 : thinkingEnabled ? 1 : 0.7),
+		temperature: options.temperature ?? (isClaude || isGptOss ? 0.4 : thinkingEnabled ? 1 : 0.7),
 		topP: 1,
-		topK: isClaude ? 50 : 40,
+		topK: isClaude || isGptOss ? 50 : 40,
 		candidateCount: 1,
 		maxOutputTokens: options.maxTokens ?? 16384,
+		stopSequences: ["<|user|>", "<|bot|>", "<|context_request|>", "<|endoftext|>", "<|end_of_turn|>"],
 		thinkingConfig: {
 			includeThoughts: thinkingEnabled,
 			thinkingBudget: thinkingBudget,

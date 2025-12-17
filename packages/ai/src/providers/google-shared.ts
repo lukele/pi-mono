@@ -350,5 +350,14 @@ export function isClaudeModel(modelId: string): boolean {
  */
 export function isThinkingCapableModel(modelId: string): boolean {
 	const lower = modelId.toLowerCase();
-	return lower.includes("thinking") || lower.includes("gemini-3") || lower.includes("opus");
+	return (
+		lower.includes("thinking") || lower.includes("gemini-3") || lower.includes("opus") || lower.includes("gpt-oss")
+	);
+}
+
+/**
+ * Check if a model is a GPT-OSS model.
+ */
+export function isGptOssModel(modelId: string): boolean {
+	return modelId.toLowerCase().includes("gpt-oss");
 }

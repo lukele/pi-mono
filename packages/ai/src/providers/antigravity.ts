@@ -189,7 +189,7 @@ function buildAntigravityRequest(
 
 		requestPayload.toolConfig = {
 			functionCallingConfig: {
-				mode: options.toolChoice?.toUpperCase() || "AUTO",
+				mode: "VALIDATED",
 			},
 		};
 	}

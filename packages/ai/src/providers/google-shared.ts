@@ -274,11 +274,14 @@ function convertSchema(schema: any, options: ConvertToolsOptions): any {
 
 /**
  * Convert tools to Gemini/Antigravity function declarations format.
+ * For Antigravity, each tool is wrapped in its own functionDeclarations array.
  */
 export function convertToolsToGemini(tools: Tool[], options: ConvertToolsOptions = {}): any[] | undefined {
 	if (!tools || tools.length === 0) return undefined;
 
-	const functionDeclarations = tools.map((tool) => {
+	// Antigravity format: each tool in its own functionDeclarations wrapper
+	// [{ functionDeclarations: [tool1] }, { functionDeclarations: [tool2] }, ...]
+	return tools.map((tool) => {
 		const schema = tool.parameters as any;
 
 		// Sanitize tool name
@@ -287,13 +290,15 @@ export function convertToolsToGemini(tools: Tool[], options: ConvertToolsOptions
 			.slice(0, 64);
 
 		return {
-			name,
-			description: tool.description || "",
-			parameters: convertSchema(schema, options),
+			functionDeclarations: [
+				{
+					name,
+					description: tool.description || "",
+					parameters: convertSchema(schema, options),
+				},
+			],
 		};
 	});
-
-	return [{ functionDeclarations }];
 }
 
 // ============================================================================
